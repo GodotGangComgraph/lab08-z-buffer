@@ -182,6 +182,7 @@ class Spatial:
 	var points: Array[Point]
 	var mid_point: Point = Point.new(0, 0, 0)
 	var faces #Array[Array[int]]
+	var normals: Array[Vector3]
 	func _init() -> void:
 		points = []
 		faces = []
@@ -200,7 +201,7 @@ class Spatial:
 	func add_edge(p1: Point, p2: Point):
 		points.append(p1)
 		points.append(p2)
-
+		
 	func clear():
 		points.clear()
 		faces.clear()
@@ -284,6 +285,7 @@ class Spatial:
 					var vertex_index = parts[i].split("/")[0].to_int() - 1
 					face_indices.append(vertex_index)
 				add_face(face_indices)
+		calculate_normals()
 		file.close()
 
 	func save_from_obj(file_path: String):
@@ -303,7 +305,30 @@ class Spatial:
 			file.store_string(line)
 			
 		file.close()
-
+		
+	func calculate_normals():
+		normals = []
+		for face in faces:
+			var p1 = points[face[0]].duplicate().get_vec3d()
+			var p2 = points[face[1]].duplicate().get_vec3d()
+			var p3 = points[face[2]].duplicate().get_vec3d()
+			var v1 = p2 - p1
+			var v2 = p3 - p2
+			normals.append(v1.cross(v2))
+	
+	func remove_back_faces(view_vector: Vector3):
+		var visible_faces = []
+		var visible_normals: Array[Vector3] = []
+		
+		for i in range(faces.size()):
+			var face = faces[i]
+			var normal = normals[i]
+			var dot_product = normal.dot(view_vector)
+			if dot_product > 0:
+				visible_faces.append(face)
+				visible_normals.append(normal)
+		faces = visible_faces
+		normals = visible_normals
 
 class Axis extends Spatial:
 	func _init():
@@ -363,6 +388,7 @@ class RotationSpatial extends Spatial:
 		var last_base_index = (num_segments - 1) * len(points_start)
 		for j in range(len(points_start) - 1):
 			add_face([last_base_index + j, last_base_index + j + 1, j + 1, j])
+		calculate_normals()
 
 class FunctionSurface extends Spatial:
 	func _init() -> void:
@@ -387,3 +413,9 @@ class FunctionSurface extends Spatial:
 				var bottom_left = (i + 1) * cnt_x + j
 				var bottom_right = (i + 1) * cnt_x + (j + 1)
 				faces.append([top_left, top_right, bottom_left, bottom_right])
+		calculate_normals()
+
+class Camera:
+	var position: Vector3
+	var direction: Vector3
+	var projection_matrix: DenseMatrix

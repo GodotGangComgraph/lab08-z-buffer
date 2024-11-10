@@ -9,6 +9,7 @@ var axis = F.Axis.new()
 var axonometric_matrix = F.AffineMatrices.get_axonometric_matrix(35.26, 45)
 var perspective_matrix = F.AffineMatrices.get_perspective_matrix(-300)
 var projection_matrix = axonometric_matrix
+var view_vector: Vector3 = Vector3(0, 0, -1)
 
 var is_auto_rotating = false
 
@@ -66,6 +67,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			queue_redraw()
 
 func _draw() -> void:
+	spatial.remove_back_faces(view_vector)
 	draw_by_faces(spatial)
 	draw_axes()
 	draw_line(p1_line.get_vec2d(), p2_line.get_vec2d(), Color.BLUE)
@@ -80,6 +82,18 @@ func draw_points():
 
 func draw_by_faces(obj: F.Spatial):
 	for face in obj.faces:
+		var points = []
+		var colors = []
+		for point in face:
+			var to_insert = obj.points[point].duplicate()
+			to_insert.apply_matrix(projection_matrix)
+			points.append(to_insert.get_vec2d())
+			colors.append(Color.AQUAMARINE)
+		draw_colored_polygon(points, Color.AQUAMARINE)
+		draw_polyline(points, Color.BLACK)
+		
+	## LEGACY CODE
+	'''for face in obj.faces:
 		var old_point = obj.points[face[0]].duplicate()
 		old_point.apply_matrix(projection_matrix)
 		
@@ -93,7 +107,7 @@ func draw_by_faces(obj: F.Spatial):
 		var first_point = obj.points[face[0]].duplicate()
 		first_point.apply_matrix(projection_matrix)
 		draw_line(first_point.get_vec2d(), old_point.get_vec2d(), face_color, 0.5, true)
-
+'''
 func get_edge_color() -> Color:
 	var dynamic_color = Color.from_hsv(hue_shift, 0.8, 0.9)
 	return dynamic_color
