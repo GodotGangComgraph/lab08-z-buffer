@@ -180,12 +180,10 @@ class Point:
 
 class Spatial:
 	var points: Array[Point]
-	var edges: Array[Vector2i]
 	var mid_point: Point = Point.new(0, 0, 0)
 	var faces #Array[Array[int]]
 	func _init() -> void:
 		points = []
-		edges = []
 		faces = []
 	func add_point(p: Point):
 		points.append(p)
@@ -202,11 +200,9 @@ class Spatial:
 	func add_edge(p1: Point, p2: Point):
 		points.append(p1)
 		points.append(p2)
-		edges.append(Vector2i(points.size() - 2, points.size() - 1))
 
 	func clear():
 		points.clear()
-		edges.clear()
 		faces.clear()
 	
 	func get_middle():
