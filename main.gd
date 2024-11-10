@@ -6,8 +6,9 @@ var edge_length = 100
 var spatial
 var axis = F.Axis.new()
 
+var c = -1000
 var axonometric_matrix = F.AffineMatrices.get_axonometric_matrix(35.26, 45)
-var perspective_matrix = F.AffineMatrices.get_perspective_matrix(-300)
+var perspective_matrix = F.AffineMatrices.get_perspective_matrix(c)
 var projection_matrix = axonometric_matrix
 var view_vector: Vector3 = Vector3(0, 0, -1)
 
@@ -46,6 +47,10 @@ var point_start: Array
 
 var world_center: Vector3 = Vector3(450, 300, 0)
 
+var camera_position = Vector3(1000, 300, 100)
+var camera_target = Vector3(-1000, 700, 0)
+var camera_speed = 40
+
 func _ready():
 	spatial = F.Spatial.new()
 	#point_start = spatial.points_start
@@ -65,19 +70,23 @@ func _unhandled_input(event: InputEvent) -> void:
 			print(mouse_pos)
 			point_start.append(F.Point.new(mouse_pos.x, mouse_pos.y, 0))
 			queue_redraw()
+	
 
 func _draw() -> void:
-	spatial.remove_back_faces(view_vector)
+	#spatial.remove_back_faces(view_vector)
 	draw_by_faces(spatial)
 	draw_axes()
-	draw_line(p1_line.get_vec2d(), p2_line.get_vec2d(), Color.BLUE)
+	#draw_line(p1_line.get_vec2d(), p2_line.get_vec2d(), Color.BLUE)
 	draw_points()
 
 func draw_points():
 	for point in point_start:
 		var p = point.duplicate()
 		#p.translate(world_center.x, world_center.y, world_center.z)
-		p.apply_matrix(projection_matrix)
+		
+		#p.apply_matrix(projection_matrix)
+		p.apply_matrix(F.AffineMatrices.get_camera_matrix(camera_position, camera_target, c))
+		
 		draw_circle(p.get_vec2d(), 3, Color.AQUAMARINE)
 
 func draw_by_faces(obj: F.Spatial):
@@ -86,11 +95,15 @@ func draw_by_faces(obj: F.Spatial):
 		var colors = []
 		for point in face:
 			var to_insert = obj.points[point].duplicate()
-			to_insert.apply_matrix(projection_matrix)
+			
+			#to_insert.apply_matrix(projection_matrix)
+			to_insert.apply_matrix(F.AffineMatrices.get_camera_matrix(camera_position, camera_target, c))
+			
 			points.append(to_insert.get_vec2d())
 			colors.append(Color.AQUAMARINE)
-		draw_colored_polygon(points, Color.AQUAMARINE)
-		draw_polyline(points, Color.BLACK)
+		
+		#draw_colored_polygon(points, Color.AQUAMARINE)
+		draw_polyline(points, Color.AQUAMARINE)
 		
 	## LEGACY CODE
 	'''for face in obj.faces:
@@ -113,14 +126,21 @@ func get_edge_color() -> Color:
 	return dynamic_color
 
 func _process(delta: float) -> void:
-	if not is_auto_rotating:
-		return
-	
-	hue_shift += color_speed * delta
-	hue_shift = fmod(hue_shift, 1.0)
-	
-	var vec = spatial.get_middle()
-	spatial.rotation_about_center(vec, 0.5, 0.5, 0.5)
+	var p = F.Point.new(camera_position.x, camera_position.y, camera_position.z)
+	#p.translate(-world_center.x, -world_center.y, -world_center.z)
+	p.apply_matrix(F.AffineMatrices.get_rotation_matrix_about_x(delta*camera_speed))
+	#p.apply_matrix(F.AffineMatrices.get_rotation_matrix_about_y(delta*camera_speed))
+	#p.apply_matrix(F.AffineMatrices.get_rotation_matrix_about_z(delta*camera_speed))
+	#p.translate(world_center.x, world_center.y, world_center.z)
+	camera_position = p.get_vec3d()
+	#if not is_auto_rotating:
+		#return
+	#
+	#hue_shift += color_speed * delta
+	#hue_shift = fmod(hue_shift, 1.0)
+	#
+	#var vec = spatial.get_middle()
+	#spatial.rotation_about_center(vec, 0.5, 0.5, 0.5)
 	
 	queue_redraw()
 
@@ -129,8 +149,12 @@ func draw_axes():
 	for i in range(3):
 		var p1: F.Point = axis.points[axis.faces[i][0]].duplicate()
 		var p2: F.Point = axis.points[axis.faces[i][1]].duplicate()
-		p1.apply_matrix(projection_matrix)
-		p2.apply_matrix(projection_matrix)
+		#p1.apply_matrix(projection_matrix)
+		#p2.apply_matrix(projection_matrix)
+		p1.apply_matrix(F.AffineMatrices.get_camera_matrix(camera_position, camera_target, c))
+		p2.apply_matrix(F.AffineMatrices.get_camera_matrix(camera_position, camera_target, c))
+		
+		#print(p1.get_vec2d(), p2.get_vec2d())
 		draw_line(p1.get_vec2d(), p2.get_vec2d(), colors[i], 0.5, true)
 		draw_line(p1.get_vec2d(), p1.get_vec2d()-(p2.get_vec2d() - p1.get_vec2d()), colors[i], 0.5, true)
 

@@ -7,6 +7,37 @@ class AffineMatrices:
 		m.set_element(2, 2, 0)
 		m.set_element(2, 3, -1.0/c)
 		return m
+	
+	static func get_view_matrix(pos: Vector3, target: Vector3, up: Vector3) -> DenseMatrix:
+		var forward = (target - pos).normalized()
+		var right = up.cross(forward).normalized()
+		#var up_corrected = forward.cross(right)
+		var up_corrected = up.normalized()
+		
+		var view_matrix = DenseMatrix.identity(4)
+		
+		view_matrix.set_element(0, 0, right.x)
+		view_matrix.set_element(0, 1, right.y)
+		view_matrix.set_element(0, 2, right.z)
+		view_matrix.set_element(1, 0, up_corrected.x)
+		view_matrix.set_element(1, 1, up_corrected.y)
+		view_matrix.set_element(1, 2, up_corrected.z)
+		view_matrix.set_element(2, 0, -forward.x)
+		view_matrix.set_element(2, 1, -forward.y)
+		view_matrix.set_element(2, 2, -forward.z)
+		
+		# Заполнение матрицы позиции
+		view_matrix.set_element(0, 3, -right.dot(pos))
+		view_matrix.set_element(1, 3, -up_corrected.dot(pos))
+		view_matrix.set_element(2, 3, forward.dot(pos))
+		
+		return view_matrix
+
+	static func get_camera_matrix(pos: Vector3, target: Vector3, c: float) -> DenseMatrix:
+		var up = Vector3(0, 1, 0)
+		var perspective_matrix = get_perspective_matrix(c).transposed()
+		var view_matrix = get_view_matrix(pos, target, up)
+		return perspective_matrix.multiply_dense(view_matrix.transposed())
 
 	static func get_axonometric_matrix(phi_deg: float, psi_deg: float) -> DenseMatrix:
 		var phi = deg_to_rad(phi_deg)
@@ -173,9 +204,6 @@ class Point:
 
 	func get_vec3d():
 		return Vector3(x/w, y/w, z/w)
-
-	
-					
 
 
 class Spatial:
@@ -414,8 +442,3 @@ class FunctionSurface extends Spatial:
 				var bottom_right = (i + 1) * cnt_x + (j + 1)
 				faces.append([top_left, top_right, bottom_left, bottom_right])
 		calculate_normals()
-
-class Camera:
-	var position: Vector3
-	var direction: Vector3
-	var projection_matrix: DenseMatrix

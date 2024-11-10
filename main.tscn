@@ -23,6 +23,7 @@ mouse_filter = 1
 script = ExtResource("1_mkuq4")
 
 [node name="ColorRect" type="ColorRect" parent="."]
+visible = false
 z_index = -1
 material = SubResource("ShaderMaterial_70vrq")
 layout_mode = 1
