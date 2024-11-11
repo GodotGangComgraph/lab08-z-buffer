@@ -73,7 +73,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	
 
 func _draw() -> void:
-	view_vector = (camera_position - camera_target).normalized()
+	view_vector = (camera_target - camera_position).normalized()
 	if not spatial == null:
 		spatial.remove_back_faces(view_vector)
 		draw_by_faces(spatial)
@@ -102,7 +102,7 @@ func draw_by_faces(obj: F.Spatial):
 			colors.append(Color.AQUAMARINE)
 		
 		draw_colored_polygon(points, Color.AQUAMARINE)
-		draw_polyline(points, Color.AQUAMARINE)
+		draw_polyline(points, Color.BLACK)
 		
 func get_edge_color() -> Color:
 	var dynamic_color = Color.from_hsv(hue_shift, 0.8, 0.9)

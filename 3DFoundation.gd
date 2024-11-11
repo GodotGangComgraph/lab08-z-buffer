@@ -363,7 +363,6 @@ class Spatial:
 				v_faces.append(face)
 				visible_normals.append(normal)
 		visible_faces = v_faces
-		normals = visible_normals
 
 class Axis extends Spatial:
 	func _init():
