@@ -6,7 +6,7 @@ var edge_length = 100
 var spatial
 var axis = F.Axis.new()
 
-var c = -1000
+var c = 100
 var axonometric_matrix = F.AffineMatrices.get_axonometric_matrix(35.26, 45)
 var perspective_matrix = F.AffineMatrices.get_perspective_matrix(c)
 var projection_matrix = axonometric_matrix
@@ -45,10 +45,10 @@ var point_start: Array
 @onready var scale_my: LineEdit = $HBox/MarginContainer/Menu/Scale/my
 @onready var scale_mz: LineEdit = $HBox/MarginContainer/Menu/Scale/mz
 
-var world_center: Vector3 = Vector3(450, 300, 0)
+var world_center: Vector3 = Vector3(400, 400, 100)
 
-var camera_position = Vector3(1000, 300, 100)
-var camera_target = Vector3(-1000, 700, 0)
+var camera_position = Vector3(100, 100, 0)
+var camera_target = Vector3(0, 0, 0)
 var camera_speed = 40
 
 func _ready():
@@ -82,11 +82,9 @@ func _draw() -> void:
 func draw_points():
 	for point in point_start:
 		var p = point.duplicate()
+		#p.translate(-world_center.x, -world_center.y, -world_center.z)
+		p.apply_matrix(F.AffineMatrices.get_mvp_matrix(world_center, camera_position, camera_target, c))
 		#p.translate(world_center.x, world_center.y, world_center.z)
-		
-		#p.apply_matrix(projection_matrix)
-		p.apply_matrix(F.AffineMatrices.get_camera_matrix(camera_position, camera_target, c))
-		
 		draw_circle(p.get_vec2d(), 3, Color.AQUAMARINE)
 
 func draw_by_faces(obj: F.Spatial):
@@ -97,30 +95,13 @@ func draw_by_faces(obj: F.Spatial):
 			var to_insert = obj.points[point].duplicate()
 			
 			#to_insert.apply_matrix(projection_matrix)
-			to_insert.apply_matrix(F.AffineMatrices.get_camera_matrix(camera_position, camera_target, c))
-			
+			to_insert.apply_matrix(F.AffineMatrices.get_mvp_matrix(world_center, camera_position, camera_target, c))
 			points.append(to_insert.get_vec2d())
 			colors.append(Color.AQUAMARINE)
 		
 		#draw_colored_polygon(points, Color.AQUAMARINE)
 		draw_polyline(points, Color.AQUAMARINE)
 		
-	## LEGACY CODE
-	'''for face in obj.faces:
-		var old_point = obj.points[face[0]].duplicate()
-		old_point.apply_matrix(projection_matrix)
-		
-		var face_color = get_edge_color()
-		
-		for index in face.slice(1, face.size()):
-			var p = obj.points[index].duplicate()
-			p.apply_matrix(projection_matrix)
-			draw_line(old_point.get_vec2d(), p.get_vec2d(), face_color, 0.5, true)
-			old_point = p
-		var first_point = obj.points[face[0]].duplicate()
-		first_point.apply_matrix(projection_matrix)
-		draw_line(first_point.get_vec2d(), old_point.get_vec2d(), face_color, 0.5, true)
-'''
 func get_edge_color() -> Color:
 	var dynamic_color = Color.from_hsv(hue_shift, 0.8, 0.9)
 	return dynamic_color
@@ -128,10 +109,10 @@ func get_edge_color() -> Color:
 func _process(delta: float) -> void:
 	var p = F.Point.new(camera_position.x, camera_position.y, camera_position.z)
 	#p.translate(-world_center.x, -world_center.y, -world_center.z)
-	p.apply_matrix(F.AffineMatrices.get_rotation_matrix_about_x(delta*camera_speed))
-	#p.apply_matrix(F.AffineMatrices.get_rotation_matrix_about_y(delta*camera_speed))
-	#p.apply_matrix(F.AffineMatrices.get_rotation_matrix_about_z(delta*camera_speed))
+	#p.apply_matrix(F.AffineMatrices.get_rotation_matrix_about_x(delta*camera_speed))
 	#p.translate(world_center.x, world_center.y, world_center.z)
+	p.apply_matrix(F.AffineMatrices.get_rotation_matrix_about_y(delta*camera_speed))
+	#p.apply_matrix(F.AffineMatrices.get_rotation_matrix_about_z(delta*camera_speed))
 	camera_position = p.get_vec3d()
 	#if not is_auto_rotating:
 		#return
@@ -151,9 +132,8 @@ func draw_axes():
 		var p2: F.Point = axis.points[axis.faces[i][1]].duplicate()
 		#p1.apply_matrix(projection_matrix)
 		#p2.apply_matrix(projection_matrix)
-		p1.apply_matrix(F.AffineMatrices.get_camera_matrix(camera_position, camera_target, c))
-		p2.apply_matrix(F.AffineMatrices.get_camera_matrix(camera_position, camera_target, c))
-		
+		p1.apply_matrix(F.AffineMatrices.get_mvp_matrix(world_center, camera_position, camera_target, c))
+		p2.apply_matrix(F.AffineMatrices.get_mvp_matrix(world_center, camera_position, camera_target, c))
 		#print(p1.get_vec2d(), p2.get_vec2d())
 		draw_line(p1.get_vec2d(), p2.get_vec2d(), colors[i], 0.5, true)
 		draw_line(p1.get_vec2d(), p1.get_vec2d()-(p2.get_vec2d() - p1.get_vec2d()), colors[i], 0.5, true)
