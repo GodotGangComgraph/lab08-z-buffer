@@ -73,8 +73,10 @@ func _unhandled_input(event: InputEvent) -> void:
 	
 
 func _draw() -> void:
-	#spatial.remove_back_faces(view_vector)
-	draw_by_faces(spatial)
+	view_vector = (camera_position - camera_target).normalized()
+	if not spatial == null:
+		spatial.remove_back_faces(view_vector)
+		draw_by_faces(spatial)
 	draw_axes()
 	#draw_line(p1_line.get_vec2d(), p2_line.get_vec2d(), Color.BLUE)
 	draw_points()
@@ -82,13 +84,13 @@ func _draw() -> void:
 func draw_points():
 	for point in point_start:
 		var p = point.duplicate()
-		#p.translate(-world_center.x, -world_center.y, -world_center.z)
+		
 		p.apply_matrix(F.AffineMatrices.get_mvp_matrix(world_center, camera_position, camera_target, c))
-		#p.translate(world_center.x, world_center.y, world_center.z)
+		
 		draw_circle(p.get_vec2d(), 3, Color.AQUAMARINE)
 
 func draw_by_faces(obj: F.Spatial):
-	for face in obj.faces:
+	for face in obj.visible_faces:
 		var points = []
 		var colors = []
 		for point in face:
@@ -99,7 +101,7 @@ func draw_by_faces(obj: F.Spatial):
 			points.append(to_insert.get_vec2d())
 			colors.append(Color.AQUAMARINE)
 		
-		#draw_colored_polygon(points, Color.AQUAMARINE)
+		draw_colored_polygon(points, Color.AQUAMARINE)
 		draw_polyline(points, Color.AQUAMARINE)
 		
 func get_edge_color() -> Color:

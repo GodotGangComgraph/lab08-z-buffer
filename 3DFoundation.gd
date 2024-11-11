@@ -214,10 +214,12 @@ class Spatial:
 	var points: Array[Point]
 	var mid_point: Point = Point.new(0, 0, 0)
 	var faces #Array[Array[int]]
+	var visible_faces
 	var normals: Array[Vector3]
 	func _init() -> void:
 		points = []
 		faces = []
+		visible_faces = []
 	func add_point(p: Point):
 		points.append(p)
 
@@ -350,7 +352,7 @@ class Spatial:
 			normals.append(v1.cross(v2))
 	
 	func remove_back_faces(view_vector: Vector3):
-		var visible_faces = []
+		var v_faces = []
 		var visible_normals: Array[Vector3] = []
 		
 		for i in range(faces.size()):
@@ -358,9 +360,9 @@ class Spatial:
 			var normal = normals[i]
 			var dot_product = normal.dot(view_vector)
 			if dot_product > 0:
-				visible_faces.append(face)
+				v_faces.append(face)
 				visible_normals.append(normal)
-		faces = visible_faces
+		visible_faces = v_faces
 		normals = visible_normals
 
 class Axis extends Spatial:
