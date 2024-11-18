@@ -39,6 +39,7 @@ class AffineMatrices:
 		var perspective_matrix = get_perspective_matrix(c).transposed()
 		var view_matrix = get_view_matrix(camera_pos, camera_target, up)
 		var translate_to = get_translation_matrix(world_center.x, world_center.y, world_center.z)
+		#var translate_to = DenseMatrix.identity(4)
 		var m1 = translate_from.multiply_dense(view_matrix.transposed())
 		var m2 = m1.multiply_dense(perspective_matrix)
 		return m2.multiply_dense(translate_to)
@@ -320,6 +321,7 @@ class Spatial:
 					face_indices.append(vertex_index)
 				add_face(face_indices)
 		calculate_normals()
+		triangulate_faces()
 		scale_about_center(mid_point, 128, 128, 128)
 		file.close()
 
@@ -363,6 +365,15 @@ class Spatial:
 				v_faces.append(face)
 				visible_normals.append(normal)
 		visible_faces = v_faces
+	
+	func triangulate_faces():
+		var new_faces = []
+		for i in range(faces.size()):
+			var face = faces[i]
+			for j in range(2, face.size()):
+				new_faces.append([face[0], face[j-1], face[j]])
+		faces = new_faces
+
 
 class Axis extends Spatial:
 	func _init():
@@ -381,6 +392,49 @@ class Axis extends Spatial:
 			[0, 2],
 			[0, 3]
 		]
+
+class Cube extends Spatial:
+	func _init():
+		var edge_length = 150
+		var l = edge_length/2
+		
+		## THIS IS POINTS FROM SPATIAL
+		points = [
+			Point.new(-l, -l, -l),	Point.new(l, -l, -l),
+			Point.new(l, l, -l),		Point.new(-l, l, -l),
+			Point.new(-l, -l, l),		Point.new(l, -l, l),
+			Point.new(l, l, l),		Point.new(-l, l, l)
+		]
+		faces = [
+			[0, 1, 2, 3],
+			[4, 5, 6, 7],
+			[0, 1, 5, 4],
+			[2, 3, 7, 6],
+			[0, 3, 7, 4],
+			[1, 2, 6, 5]
+		]
+		triangulate_faces()
+		visible_faces = faces
+
+class Tetrahedron extends Spatial:
+	func _init():
+		var edge_length = 150
+		var l = edge_length/2
+
+		## THIS IS POINTS FROM SPATIAL
+		points = [
+			Point.new(l, l, l),
+			Point.new(-l, -l, l),
+			Point.new(-l, l, -l),
+			Point.new(l, -l, -l)
+		]
+		faces = [
+			[0, 1, 2],
+			[0, 1, 3],
+			[0, 2, 3],
+			[1, 2, 3]
+		]
+		visible_faces = faces
 
 class RotationSpatial extends Spatial:
 	var num_segments = 10

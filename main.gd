@@ -10,7 +10,7 @@ var c = 100
 var axonometric_matrix = F.AffineMatrices.get_axonometric_matrix(35.26, 45)
 var perspective_matrix = F.AffineMatrices.get_perspective_matrix(c)
 var projection_matrix = axonometric_matrix
-var view_vector: Vector3 = Vector3(0, 0, -1)
+var view_vector: Vector3 = Vector3.ZERO
 
 var is_auto_rotating = false
 
