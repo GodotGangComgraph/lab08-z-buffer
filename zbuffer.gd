@@ -41,8 +41,8 @@ var point_start: Array
 
 var world_center: Vector3 = Vector3(400, 400, 100)
 
-var camera_position = Vector3(100, 100, 0)
-var camera_target = Vector3(0, 0, 30)
+var camera_position = Vector3(100, 100, 100)
+var camera_target = Vector3(0, 0, 0)
 var camera_speed = 40
 
 var z_buffer = []
@@ -75,16 +75,17 @@ func _draw() -> void:
 func draw_by_faces(obj: F.Spatial, color: Color):
 	for face in obj.visible_faces:
 		var points = []
+		var zarray = []
 		var colors = []
 		for point in face:
 			var to_insert = obj.points[point].duplicate()
+			zarray.append(to_insert.z)
 			to_insert.apply_matrix(F.AffineMatrices.get_mvp_matrix(world_center, camera_position, camera_target, c))
-			points.append(to_insert.get_vec3d())
+			points.append(to_insert.get_vec2d())
 			colors.append(color)
-		
-		rasterize(points, colors)
+		rasterize(points, colors, zarray)
 
-func rasterize(points, colors):
+func rasterize(points, colors, zarray):
 	var min_x = 0
 	var min_y = 0
 	var max_x = get_window().size.x
@@ -107,11 +108,11 @@ func rasterize(points, colors):
 			if lambda1 >= 0.0 and lambda2 >= 0.0 and lambda3 >= 0.0:
 				var interpolated_color = colors[0] * lambda1 + colors[1] * lambda2 + colors[2] * lambda3
 				
-				var interpolated_z = points[0].z * lambda1 + points[1].z * lambda2 + points[2].z * lambda3
+				var interpolated_z = zarray[0] * lambda1 + zarray[1] * lambda2 + zarray[2] * lambda3
 				
 				#var depth = view_vector.dot(Vector3(x, y, interpolated_z)-camera_position)
-				
-				if z_buffer[y][x] < interpolated_z:
+				print(interpolated_color, interpolated_z)
+				if 1e-6 < interpolated_z - z_buffer[y][x]:
 					z_buffer[y][x] = interpolated_z
 					draw_primitive([p], [interpolated_color], [Vector2(0, 0)])
 
