@@ -46,16 +46,19 @@ var camera_target = Vector3(0, 0, 30)
 var camera_speed = 40
 
 var z_buffer = []
+
+
 func reset_z_buffer():
 	z_buffer.clear()
 	for y in range(get_window().size.y):
 		var row = []
 		for x in range(get_window().size.x):
-			row.append(INF)
+			row.append(-INF)
 		z_buffer.append(row)
 
 func _ready():
 	axis.translate(world_center.x, world_center.y, world_center.z)
+	
 	queue_redraw()
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -72,13 +75,47 @@ func _draw() -> void:
 func draw_by_faces(obj: F.Spatial, color: Color):
 	for face in obj.visible_faces:
 		var points = []
+		var colors = []
 		for point in face:
 			var to_insert = obj.points[point].duplicate()
 			to_insert.apply_matrix(F.AffineMatrices.get_mvp_matrix(world_center, camera_position, camera_target, c))
-			points.append(to_insert.get_vec2d())
+			points.append(to_insert.get_vec3d())
+			colors.append(color)
 		
-		var img: Image = Image.new()
-		draw_colored_polygon(points, color)
+		rasterize(points, colors)
+
+func rasterize(points, colors):
+	var min_x = 0
+	var min_y = 0
+	var max_x = get_window().size.x
+	var max_y = get_window().size.y
+	
+	for y in range(min_y, max_y):
+		for x in range(min_x, max_x):
+			var p = Vector2(x, y)
+			
+			var lambda1 = ((points[1].y - points[2].y) * (p.x - points[2].x) \
+			+ (points[2].x - points[1].x) * (p.y - points[2].y)) / ((points[1].y - points[2].y) \
+			* (points[0].x - points[2].x) + (points[2].x - points[1].x) * (points[0].y - points[2].y))
+			
+			var lambda2 = ((points[2].y - points[0].y) * (p.x - points[2].x) \
+			+ (points[0].x - points[2].x) * (p.y - points[2].y)) / ((points[1].y - points[2].y) \
+			* (points[0].x - points[2].x) + (points[2].x - points[1].x) * (points[0].y - points[2].y))
+			
+			var lambda3 = 1.0 - lambda1 - lambda2
+			
+			if lambda1 >= 0.0 and lambda2 >= 0.0 and lambda3 >= 0.0:
+				var interpolated_color = colors[0] * lambda1 + colors[1] * lambda2 + colors[2] * lambda3
+				
+				var interpolated_z = points[0].z * lambda1 + points[1].z * lambda2 + points[2].z * lambda3
+				
+				#var depth = view_vector.dot(Vector3(x, y, interpolated_z)-camera_position)
+				
+				if z_buffer[y][x] < interpolated_z:
+					z_buffer[y][x] = interpolated_z
+					draw_primitive([p], [interpolated_color], [Vector2(0, 0)])
+
+
 
 func _process(delta: float) -> void:
 	pass
