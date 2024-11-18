@@ -70,6 +70,8 @@ func _draw() -> void:
 	view_vector = (camera_target - camera_position).normalized()
 	draw_axes()
 	for i in range(spatials.size()):
+		spatials[i].calculate_normals()
+		spatials[i].remove_back_faces(view_vector)
 		draw_by_faces(spatials[i], colors[i])
 
 func draw_by_faces(obj: F.Spatial, color: Color):
@@ -82,7 +84,7 @@ func draw_by_faces(obj: F.Spatial, color: Color):
 			zarray.append(to_insert.z)
 			to_insert.apply_matrix(F.AffineMatrices.get_mvp_matrix(world_center, camera_position, camera_target, c))
 			points.append(to_insert.get_vec2d())
-			colors.append(color)
+			colors.append(Color(randf(), randf(), randf()))
 		rasterize(points, colors, zarray)
 
 func rasterize(points, colors, zarray):
@@ -111,7 +113,6 @@ func rasterize(points, colors, zarray):
 				var interpolated_z = zarray[0] * lambda1 + zarray[1] * lambda2 + zarray[2] * lambda3
 				
 				#var depth = view_vector.dot(Vector3(x, y, interpolated_z)-camera_position)
-				print(interpolated_color, interpolated_z)
 				if 1e-6 < interpolated_z - z_buffer[y][x]:
 					z_buffer[y][x] = interpolated_z
 					draw_primitive([p], [interpolated_color], [Vector2(0, 0)])
