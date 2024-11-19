@@ -88,10 +88,10 @@ func draw_by_faces(obj: F.Spatial, color: Color):
 		rasterize(points, colors, zarray)
 
 func rasterize(points, colors, zarray):
-	var min_x = 0
-	var min_y = 0
-	var max_x = get_window().size.x
-	var max_y = get_window().size.y
+	var min_x = max(0, min(points[0].x, points[1].x, points[2].x))
+	var min_y = max(0, min(points[0].y, points[1].y, points[2].y))
+	var max_x = min(get_window().size.x, max(points[0].x, points[1].x, points[2].x))
+	var max_y = min(get_window().size.y, max(points[0].y, points[1].y, points[2].y))
 	
 	for y in range(min_y, max_y):
 		for x in range(min_x, max_x):
@@ -120,7 +120,14 @@ func rasterize(points, colors, zarray):
 
 
 func _process(delta: float) -> void:
-	pass
+	if true:
+		return
+	
+	var p = F.Point.new(camera_position.x, camera_position.y, camera_position.z)
+	p.apply_matrix(F.AffineMatrices.get_rotation_matrix_about_y(delta*camera_speed))
+	camera_position = p.get_vec3d()
+	
+	queue_redraw()
 
 func draw_axes():
 	var colors_axes = [Color.RED, Color.GREEN, Color.BLUE]

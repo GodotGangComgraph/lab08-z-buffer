@@ -371,7 +371,7 @@ class Spatial:
 		for i in range(faces.size()):
 			var face = faces[i]
 			for j in range(2, face.size()):
-				new_faces.append([face[0], face[j-1], face[j]])
+				new_faces.append([face[j], face[j-1], face[0]])
 		faces = new_faces
 
 
@@ -400,10 +400,10 @@ class Cube extends Spatial:
 		
 		## THIS IS POINTS FROM SPATIAL
 		points = [
-			Point.new(-l, -l, -l),	Point.new(l, -l, -l),
-			Point.new(l, l, -l),		Point.new(-l, l, -l),
-			Point.new(-l, -l, l),		Point.new(l, -l, l),
-			Point.new(l, l, l),		Point.new(-l, l, l)
+			Point.new(-l, -l, -l), Point.new(l, -l, -l),
+			Point.new(l, l, -l), Point.new(-l, l, -l),
+			Point.new(-l, -l, l), Point.new(l, -l, l),
+			Point.new(l, l, l), Point.new(-l, l, l),
 		]
 		faces = [
 			[0, 1, 2, 3],
