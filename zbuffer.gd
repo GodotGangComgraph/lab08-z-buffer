@@ -65,10 +65,28 @@ func _ready():
 
 	queue_redraw()
 
+
+@onready var check_box: CheckBox = $VBoxContainer/HBoxContainer/VBoxContainer/CheckBox
+
+func _process(delta: float) -> void:
+	if not check_box.button_pressed:
+		return
+	
+	var p = F.Point.new(camera_position.x, camera_position.y, camera_position.z)
+	p.apply_matrix(F.AffineMatrices.get_rotation_matrix_about_y(delta*camera_speed))
+	camera_position = p.get_vec3d()
+	
+	queue_redraw()
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_RIGHT:
 			is_rotating = event.pressed
+		if event.button_index == MOUSE_BUTTON_MIDDLE and event.pressed:
+			if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+				Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+			else:
+				Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 	elif event is InputEventMouseMotion and is_rotating:
 		var delta = event.relative
