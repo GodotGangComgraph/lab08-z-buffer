@@ -47,6 +47,12 @@ var camera_speed = 40
 
 var z_buffer = []
 
+var is_rotating = false
+var last_mouse_position = Vector2.ZERO
+
+# Sensitivity for rotation speed
+@export var rotation_sensitivity := 0.05
+
 
 func reset_z_buffer():
 	z_buffer.clear()
@@ -57,13 +63,34 @@ func reset_z_buffer():
 		z_buffer.append(row)
 
 func _ready():
+	#Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	axis.translate(world_center.x, world_center.y, world_center.z)
 	
 	queue_redraw()
 
 func _unhandled_input(event: InputEvent) -> void:
-	pass
+	if event is InputEventMouseButton:
+		if event.button_index == MOUSE_BUTTON_RIGHT:
+			is_rotating = event.pressed
+
+	elif event is InputEventMouseMotion and is_rotating:
+		var delta = event.relative
+		rotate_camera(delta)
+
+func rotate_camera(delta: Vector2):
+	var rotation_x = -delta.x * rotation_sensitivity
+	var rotation_y = -delta.y * rotation_sensitivity
 	
+	var p = F.Point.new(camera_position.x, camera_position.y, camera_position.z)
+	
+	rotation_y = clamp(rotation_y*2, -90, 90)
+	p.apply_matrix(F.AffineMatrices.get_rotation_matrix_about_y(-rotation_x))
+	p.apply_matrix(F.AffineMatrices.get_rotation_matrix_about_x(rotation_y))
+	#p.apply_matrix(F.AffineMatrices.get_rotation_matrix_about_z(rotation_x))
+	
+	camera_position = p.get_vec3d()
+	
+	queue_redraw()
 
 func _draw() -> void:
 	reset_z_buffer()
@@ -84,8 +111,9 @@ func draw_by_faces(obj: F.Spatial, color: Color):
 			zarray.append(to_insert.z)
 			to_insert.apply_matrix(F.AffineMatrices.get_mvp_matrix(world_center, camera_position, camera_target, c))
 			points.append(to_insert.get_vec2d())
-			colors.append(Color(randf(), randf(), randf()))
+			colors.append(color)
 		rasterize(points, colors, zarray)
+		draw_polyline(points, Color.BLACK)
 
 func rasterize(points, colors, zarray):
 	var min_x = max(0, min(points[0].x, points[1].x, points[2].x))
@@ -117,17 +145,6 @@ func rasterize(points, colors, zarray):
 					z_buffer[y][x] = interpolated_z
 					draw_primitive([p], [interpolated_color], [Vector2(0, 0)])
 
-
-
-func _process(delta: float) -> void:
-	if true:
-		return
-	
-	var p = F.Point.new(camera_position.x, camera_position.y, camera_position.z)
-	p.apply_matrix(F.AffineMatrices.get_rotation_matrix_about_y(delta*camera_speed))
-	camera_position = p.get_vec3d()
-	
-	queue_redraw()
 
 func draw_axes():
 	var colors_axes = [Color.RED, Color.GREEN, Color.BLUE]
@@ -214,3 +231,18 @@ func _on_create_pressed() -> void:
 
 func _on_object_list_item_selected(index: int) -> void:
 	spatial_index = index
+
+@onready var load_file_dialog: FileDialog = $VBoxContainer/HBoxContainer/VBoxContainer/LoadFileDialog
+
+func _on_load_pressed() -> void:
+	load_file_dialog.show()
+
+func _on_load_file_dialog_file_selected(path: String) -> void:
+	var spatial = F.Spatial.new()
+	spatial.load_from_obj(path)
+	spatial.translate(world_center.x, world_center.y, world_center.z)
+	spatials.append(spatial)
+	var color_index = randi() % available_colors.size()
+	colors.append(available_colors[color_index])
+	object_list.add_item(path.get_file() + ' ' + color_names[color_index])
+	queue_redraw()

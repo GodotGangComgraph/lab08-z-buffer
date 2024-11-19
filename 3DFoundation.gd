@@ -361,7 +361,7 @@ class Spatial:
 			var face = faces[i]
 			var normal = normals[i]
 			var dot_product = normal.dot(view_vector)
-			if dot_product > 0:
+			if dot_product < 0:
 				v_faces.append(face)
 				visible_normals.append(normal)
 		visible_faces = v_faces
