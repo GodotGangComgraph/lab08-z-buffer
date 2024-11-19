@@ -93,7 +93,7 @@ var z_axis := Vector3(0, 0, 1)
 var is_facing_z := false
 
 func _draw() -> void:
-	is_facing_z = view_vector.dot(z_axis) > 0
+	is_facing_z = view_vector.dot(z_axis) >= 0
 	reset_z_buffer(-1 if is_facing_z else 1)
 	view_vector = (camera_target - camera_position).normalized()
 	draw_axes()
