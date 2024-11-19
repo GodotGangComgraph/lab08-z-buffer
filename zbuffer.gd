@@ -54,12 +54,12 @@ var last_mouse_position = Vector2.ZERO
 @export var rotation_sensitivity := 0.05
 
 
-func reset_z_buffer():
+func reset_z_buffer(sgn):
 	z_buffer.clear()
 	for y in range(get_window().size.y):
 		var row = []
 		for x in range(get_window().size.x):
-			row.append(-INF)
+			row.append(sgn * INF)
 		z_buffer.append(row)
 
 func _ready():
@@ -92,8 +92,12 @@ func rotate_camera(delta: Vector2):
 	
 	queue_redraw()
 
+var z_axis := Vector3(0, 0, 1)
+var is_facing_z := false 
+
 func _draw() -> void:
-	reset_z_buffer()
+	is_facing_z = view_vector.dot(z_axis) > 0
+	reset_z_buffer(-1 if is_facing_z else 1)
 	view_vector = (camera_target - camera_position).normalized()
 	draw_axes()
 	for i in range(spatials.size()):
@@ -139,9 +143,9 @@ func rasterize(points, colors, zarray):
 				var interpolated_color = colors[0] * lambda1 + colors[1] * lambda2 + colors[2] * lambda3
 				
 				var interpolated_z = zarray[0] * lambda1 + zarray[1] * lambda2 + zarray[2] * lambda3
-				
 				#var depth = view_vector.dot(Vector3(x, y, interpolated_z)-camera_position)
-				if 1e-6 < interpolated_z - z_buffer[y][x]:
+				var sgn = 1 if is_facing_z else -1
+				if 1e-6 < sgn * (interpolated_z - z_buffer[y][x]):
 					z_buffer[y][x] = interpolated_z
 					draw_primitive([p], [interpolated_color], [Vector2(0, 0)])
 
