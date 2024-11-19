@@ -56,16 +56,13 @@ var last_mouse_position = Vector2.ZERO
 
 func reset_z_buffer(sgn):
 	z_buffer.clear()
-	for y in range(get_window().size.y):
-		var row = []
-		for x in range(get_window().size.x):
-			row.append(sgn * INF)
-		z_buffer.append(row)
+	z_buffer.resize(get_window().size.y * get_window().size.x)
+	z_buffer.fill(sgn * INF)
 
 func _ready():
 	#Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	axis.translate(world_center.x, world_center.y, world_center.z)
-	
+
 	queue_redraw()
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -80,20 +77,20 @@ func _unhandled_input(event: InputEvent) -> void:
 func rotate_camera(delta: Vector2):
 	var rotation_x = -delta.x * rotation_sensitivity
 	var rotation_y = -delta.y * rotation_sensitivity
-	
+
 	var p = F.Point.new(camera_position.x, camera_position.y, camera_position.z)
-	
+
 	rotation_y = clamp(rotation_y*2, -90, 90)
 	p.apply_matrix(F.AffineMatrices.get_rotation_matrix_about_y(-rotation_x))
 	p.apply_matrix(F.AffineMatrices.get_rotation_matrix_about_x(rotation_y))
 	#p.apply_matrix(F.AffineMatrices.get_rotation_matrix_about_z(rotation_x))
-	
+
 	camera_position = p.get_vec3d()
-	
+
 	queue_redraw()
 
 var z_axis := Vector3(0, 0, 1)
-var is_facing_z := false 
+var is_facing_z := false
 
 func _draw() -> void:
 	is_facing_z = view_vector.dot(z_axis) > 0
@@ -120,33 +117,35 @@ func draw_by_faces(obj: F.Spatial, color: Color):
 		draw_polyline(points, Color.BLACK)
 
 func rasterize(points, colors, zarray):
-	var min_x = max(0, min(points[0].x, points[1].x, points[2].x))
-	var min_y = max(0, min(points[0].y, points[1].y, points[2].y))
-	var max_x = min(get_window().size.x, max(points[0].x, points[1].x, points[2].x))
-	var max_y = min(get_window().size.y, max(points[0].y, points[1].y, points[2].y))
-	
+	var window_width = get_window().size.x
+	var window_height = get_window().size.y
+	var min_x = int(floor(max(0, min(points[0].x, points[1].x, points[2].x))))
+	var max_x = int(ceil(min(window_width, max(points[0].x, points[1].x, points[2].x))))
+	var min_y = int(floor(max(0, min(points[0].y, points[1].y, points[2].y))))
+	var max_y = int(ceil(min(window_height, max(points[0].y, points[1].y, points[2].y))))
+	var denom = ((points[1].y - points[2].y) \
+			* (points[0].x - points[2].x) + (points[2].x - points[1].x) * (points[0].y - points[2].y))
+	var inv_denom = 1.0 / denom
 	for y in range(min_y, max_y):
 		for x in range(min_x, max_x):
 			var p = Vector2(x, y)
-			
+
 			var lambda1 = ((points[1].y - points[2].y) * (p.x - points[2].x) \
-			+ (points[2].x - points[1].x) * (p.y - points[2].y)) / ((points[1].y - points[2].y) \
-			* (points[0].x - points[2].x) + (points[2].x - points[1].x) * (points[0].y - points[2].y))
-			
+			+ (points[2].x - points[1].x) * (p.y - points[2].y)) * inv_denom
+
 			var lambda2 = ((points[2].y - points[0].y) * (p.x - points[2].x) \
-			+ (points[0].x - points[2].x) * (p.y - points[2].y)) / ((points[1].y - points[2].y) \
-			* (points[0].x - points[2].x) + (points[2].x - points[1].x) * (points[0].y - points[2].y))
-			
+			+ (points[0].x - points[2].x) * (p.y - points[2].y)) * inv_denom
 			var lambda3 = 1.0 - lambda1 - lambda2
-			
+
 			if lambda1 >= 0.0 and lambda2 >= 0.0 and lambda3 >= 0.0:
 				var interpolated_color = colors[0] * lambda1 + colors[1] * lambda2 + colors[2] * lambda3
-				
+
 				var interpolated_z = zarray[0] * lambda1 + zarray[1] * lambda2 + zarray[2] * lambda3
 				#var depth = view_vector.dot(Vector3(x, y, interpolated_z)-camera_position)
 				var sgn = 1 if is_facing_z else -1
-				if 1e-6 < sgn * (interpolated_z - z_buffer[y][x]):
-					z_buffer[y][x] = interpolated_z
+				var index = y * window_width + x
+				if 1e-6 < sgn * (interpolated_z - z_buffer[index]):
+					z_buffer[index] = interpolated_z
 					draw_primitive([p], [interpolated_color], [Vector2(0, 0)])
 
 
@@ -159,7 +158,7 @@ func draw_axes():
 		p2.apply_matrix(F.AffineMatrices.get_mvp_matrix(world_center, camera_position, camera_target, c))
 		draw_line(p1.get_vec2d(), p2.get_vec2d(), colors_axes[i], 0.5, true)
 		draw_line(p1.get_vec2d(), p1.get_vec2d()-(p2.get_vec2d() - p1.get_vec2d()), colors_axes[i], 0.5, true)
-		
+
 func _on_clear_pressed() -> void:
 	get_tree().reload_current_scene()
 
@@ -201,7 +200,7 @@ func _on_apply_scale_pressed() -> void:
 	var mx: float = vec3.x
 	var my: float = vec3.y
 	var mz: float = vec3.z
-	
+
 	spatials[spatial_index].translate(-world_center.x, -world_center.y, -world_center.z)
 	spatials[spatial_index].scale_(mx, my, mz)
 	spatials[spatial_index].translate(world_center.x, world_center.y, world_center.z)
@@ -225,11 +224,11 @@ func _on_create_pressed() -> void:
 		spatials.append(F.Cube.new())
 	else:
 		spatials.append(F.Tetrahedron.new())
-	spatials[spatials.size() -1].translate(world_center.x, world_center.y,world_center.z) 
+	spatials[spatials.size() -1].translate(world_center.x, world_center.y,world_center.z)
 	var color_index = randi() % available_colors.size()
 	colors.append(available_colors[color_index])
 	object_list.add_item(spatial_names[r] + ' ' + color_names[color_index])
-	
+
 	queue_redraw()
 
 

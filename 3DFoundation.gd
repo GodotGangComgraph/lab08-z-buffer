@@ -349,9 +349,14 @@ class Spatial:
 			var p1 = points[face[0]].duplicate().get_vec3d()
 			var p2 = points[face[1]].duplicate().get_vec3d()
 			var p3 = points[face[2]].duplicate().get_vec3d()
+			var mp = (p1 + p2 + p3) / 3
 			var v1 = p2 - p1
-			var v2 = p3 - p2
-			normals.append(v1.cross(v2))
+			var v2 = p3 - p1
+			var n = v2.cross(v1)
+			if n.dot(mp - mid_point.get_vec3d()) > 0:
+				n = -n
+			normals.append(v2.cross(v1))
+			
 	
 	func remove_back_faces(view_vector: Vector3):
 		var v_faces = []
@@ -361,7 +366,7 @@ class Spatial:
 			var face = faces[i]
 			var normal = normals[i]
 			var dot_product = normal.dot(view_vector)
-			if dot_product < 0:
+			if dot_product > 0:
 				v_faces.append(face)
 				visible_normals.append(normal)
 		visible_faces = v_faces
