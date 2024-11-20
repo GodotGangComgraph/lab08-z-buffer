@@ -137,6 +137,7 @@ layout_mode = 2
 text = "LOAD FILE"
 
 [node name="Create" type="Button" parent="VBoxContainer/HBoxContainer/VBoxContainer"]
+visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 text = "CREATE"

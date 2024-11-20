@@ -320,8 +320,8 @@ class Spatial:
 					var vertex_index = parts[i].split("/")[0].to_int() - 1
 					face_indices.append(vertex_index)
 				add_face(face_indices)
-		calculate_normals()
 		triangulate_faces()
+		calculate_normals()
 		scale_about_center(mid_point, 128, 128, 128)
 		file.close()
 
@@ -352,9 +352,8 @@ class Spatial:
 			var mp = (p1 + p2 + p3) / 3
 			var v1 = p2 - p1
 			var v2 = p3 - p1
-			var n = v2.cross(v1)
-			if n.dot(mp - mid_point.get_vec3d()) > 0:
-				n = -n
+			var n = v1.cross(v2)
+
 			normals.append(v2.cross(v1))
 			
 	
@@ -366,7 +365,7 @@ class Spatial:
 			var face = faces[i]
 			var normal = normals[i]
 			var dot_product = normal.dot(view_vector)
-			if dot_product > 0:
+			if dot_product >= 0:
 				v_faces.append(face)
 				visible_normals.append(normal)
 		visible_faces = v_faces
